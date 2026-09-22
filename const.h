@@ -48,7 +48,7 @@ constexpr int    TOURNAMENT_SIZE = 5;     // トーナメント選択のサイ�
 constexpr double GREEDY_INIT_RATIO = 0.5; // 【改良②】初期集団のうち farthest-point で作る割合
 constexpr int    LS_TOP_K          = 3;   // 【改良③】各世代で局所探索する上位個体数
 constexpr int    LS_MAX_ITER       = 20;  // 【改良③】局所探索(山登り)の最大反復回数
-constexpr int    N_RESTARTS        = 4;   // 【改良④】多スタート：GAを回す回数（一番良い結果を採用）
+constexpr int    N_RESTARTS        = 2;   // 【改良④】多スタート：GAを回す回数（一番良い結果を採用）
 
 constexpr unsigned int RANDOM_SEED = 42;
 
