@@ -1,0 +1,17 @@
+# ビルド成果物（pushしない）
+*.o
+*.obj
+*.exe
+*.log
+*.dSYM/
+orienteering
+orienteering.exe
+
+# 生成される出力（実行時に自動生成されるため追跡しない）
+output/
+
+# 開発記録（ローカル専用・pushしない）
+fix_note/
+
+# エディタ設定（環境依存・ローカル専用）
+.vscode/
