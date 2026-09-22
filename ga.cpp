@@ -226,9 +226,10 @@ void mutate(Chromosome& chromosome, int N, RNG& rng) {
 
 // ============================================================
 // 【改良③】局所探索（山登り法・メメティックGA）
-//   選ばれている1地点を、未選択の候補1つと交換して評価し、
-//   fitness が下がるなら採用。改善が止まるまで繰り返して「仕上げ」る。
-//   近すぎる地点をより良い候補に置き換えるので、特に f_dist に効く。
+//   2種類の入れ替えを試し、fitness が一番下がる手を採用。改善が止まるまで繰り返す。
+//    (1) 選択の交換：選ばれている1地点を未選択の候補と入れ替える → f_dist に効く
+//    (2) 巡回順の入れ替え：巡る順番の2地点を入れ替える → f_time（時間のずれ）に効く
+//   「どの8個を選ぶか」だけでなく「どの順で回るか」も磨くので floor に近づける。
 //   ※交換は1対1なので選択数は8のまま保たれる。
 // ============================================================
 void local_search(Chromosome& chrom, const std::vector<Landmark>& landmarks,
@@ -237,10 +238,11 @@ void local_search(Chromosome& chrom, const std::vector<Landmark>& landmarks,
     double current = evaluate(chrom, landmarks, path_cache, gate_node).fitness;
 
     for (int iter = 0; iter < LS_MAX_ITER; ++iter) {
-        int best_out = -1, best_in = -1;
+        int    best_kind = -1;            // 0:選択の交換 / 1:巡回順の入れ替え
+        int    best_a = -1, best_b = -1;
         double best_fit = current;
 
-        // 選択中の各地点 out を、未選択の各候補 in と交換して一番良い改善を探す
+        // (1) 選択の交換：選ばれている out を未選択の in と入れ替える（f_dist に効く）
         for (int out = 0; out < N; ++out) {
             if (chrom[out] != 1) continue;
             for (int in = 0; in < N; ++in) {
@@ -248,12 +250,23 @@ void local_search(Chromosome& chrom, const std::vector<Landmark>& landmarks,
                 chrom[out] = 0; chrom[in] = 1;    // 仮に交換
                 double f = evaluate(chrom, landmarks, path_cache, gate_node).fitness;
                 chrom[out] = 1; chrom[in] = 0;    // 元に戻す
-                if (f < best_fit) { best_fit = f; best_out = out; best_in = in; }
+                if (f < best_fit) { best_fit = f; best_kind = 0; best_a = out; best_b = in; }
             }
         }
 
-        if (best_out < 0) break;                  // これ以上良くならない → 終了
-        chrom[best_out] = 0; chrom[best_in] = 1;  // 一番良い交換を確定
+        // (2) 巡回順の入れ替え：順序パート先頭 Q_TARGET 個の2点を入れ替える（f_time に効く）
+        for (int a = N; a < N + Q_TARGET; ++a) {
+            for (int b = a + 1; b < N + Q_TARGET; ++b) {
+                std::swap(chrom[a], chrom[b]);    // 仮に巡回順を入れ替え
+                double f = evaluate(chrom, landmarks, path_cache, gate_node).fitness;
+                std::swap(chrom[a], chrom[b]);    // 元に戻す
+                if (f < best_fit) { best_fit = f; best_kind = 1; best_a = a; best_b = b; }
+            }
+        }
+
+        if (best_kind < 0) break;                 // これ以上良くならない → 終了
+        if (best_kind == 0) { chrom[best_a] = 0; chrom[best_b] = 1; }  // 選択の交換を確定
+        else                { std::swap(chrom[best_a], chrom[best_b]); }  // 巡回順の入れ替えを確定
         current = best_fit;
     }
 }
